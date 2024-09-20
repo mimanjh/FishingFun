@@ -51,6 +51,7 @@ namespace FishingFun
             this.WindowSizeChangedTimer.Elapsed += SizeChangedTimer_Elapsed;
             this.CardGrid.SizeChanged += MainWindow_SizeChanged;
             this.Closing += (s, e) => botThread?.Abort();
+            this.bot?.SetCastKey(this.KeyChooser.CastKey);
 
             this.KeyChooser.CastKeyChanged += (s, e) =>
             {
@@ -148,7 +149,7 @@ namespace FishingFun
         {
             if (bot == null)
             {
-                WowProcess.PressKey(ConsoleKey.Spacebar);
+                //WowProcess.PressKey(ConsoleKey.Spacebar);
                 System.Threading.Thread.Sleep(1500);
 
                 SetButtonStates(false);
@@ -164,7 +165,7 @@ namespace FishingFun
 
         public void BotThread()
         {
-            bot = new FishingBot(bobberFinder, this.biteWatcher, KeyChooser.CastKey, new List<ConsoleKey> { ConsoleKey.D5, ConsoleKey.D6 });
+            bot = new FishingBot(bobberFinder, this.biteWatcher, KeyChooser.CastKey, new List<ConsoleKey> { ConsoleKey.D9 });
             bot.FishingEventHandler += FishingEventHandler;
             bot.Start();
 

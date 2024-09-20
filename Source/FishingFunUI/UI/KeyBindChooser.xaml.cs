@@ -7,7 +7,7 @@ namespace FishingFun
 {
     public partial class KeyBindChooser : UserControl
     {
-        public ConsoleKey CastKey { get; set; } = ConsoleKey.D4;
+        public ConsoleKey CastKey { get; set; } = ConsoleKey.D8;
 
         private static string Filename = "keybind.txt";
 
@@ -35,7 +35,7 @@ namespace FishingFun
             catch (Exception e)
             {
                 System.Diagnostics.Debug.WriteLine(e.Message);
-                CastKey = ConsoleKey.D4;
+                CastKey = ConsoleKey.D8;
                 KeyBind.Text = GetCastKeyText(this.CastKey);
             }
         }

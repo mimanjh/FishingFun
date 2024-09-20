@@ -31,6 +31,8 @@ namespace FishingFun
             this.tenMinKey = tenMinKey;
 
             logger.Info("FishBot Created.");
+            logger.Info("castKey: " + castKey);
+            logger.Info("tenMinKey: " +  tenMinKey);
 
             FishingEventHandler += (s, e) => { };
         }
@@ -41,7 +43,7 @@ namespace FishingFun
 
             isEnabled = true;
 
-            DoTenMinuteKey();
+            AdditionalKeyPress();
 
             while (isEnabled)
             {
@@ -49,7 +51,7 @@ namespace FishingFun
                 {
                     logger.Info($"Pressing key {castKey} to Cast.");
 
-                    PressTenMinKeyIfDue();
+                    PressAdditionalKeyIfDue(30);
 
                     FishingEventHandler?.Invoke(this, new FishingEvent { Action = FishingAction.Cast });
                     WowProcess.PressKey(castKey);
@@ -116,7 +118,7 @@ namespace FishingFun
                 if (this.biteWatcher.IsBite(currentBobberPosition))
                 {
                     Loot(bobberPosition);
-                    PressTenMinKeyIfDue();
+                    PressAdditionalKeyIfDue(30);
                     return;
                 }
 
@@ -126,11 +128,13 @@ namespace FishingFun
 
         private DateTime StartTime = DateTime.Now;
 
-        private void PressTenMinKeyIfDue()
+        private void PressAdditionalKeyIfDue(int dueSeconds)
         {
-            if ((DateTime.Now - StartTime).TotalMinutes > 10 && tenMinKey.Count > 0)
+            var randDueSeconds = new Random();
+
+            if ((DateTime.Now - StartTime).TotalSeconds > randDueSeconds.Next(dueSeconds - 5, dueSeconds + 5) && tenMinKey.Count > 0)
             {
-                DoTenMinuteKey();
+                AdditionalKeyPress();
             }
         }
 
@@ -143,7 +147,7 @@ namespace FishingFun
         /// Or a macro to delete junk:
         /// /run for b=0,4 do for s=1,GetContainerNumSlots(b) do local n=GetContainerItemLink(b,s) if n and (strfind(n,"Raw R") or strfind(n,"Raw Spot") or strfind(n,"Raw Glo") or strfind(n,"roup")) then PickupContainerItem(b,s) DeleteCursorItem() end end end
         /// </summary>
-        private void DoTenMinuteKey()
+        private void AdditionalKeyPress()
         {
             StartTime = DateTime.Now;
 
@@ -163,8 +167,11 @@ namespace FishingFun
 
         private void Loot(Point bobberPosition)
         {
-            logger.Info($"Right clicking mouse to Loot.");
-            WowProcess.RightClickMouse(logger, bobberPosition);
+            logger.Info($"Pressing Key: D0 to loot.");
+            var randomNumber = random.Next(1500, 2000);
+            Sleep(1500);
+            WowProcess.PressKey(ConsoleKey.D0);
+            Sleep(1000);
         }
 
         public static void Sleep(int ms)

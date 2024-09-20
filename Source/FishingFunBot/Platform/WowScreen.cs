@@ -14,7 +14,7 @@ namespace FishingFun
         {
             var bmpScreen = new Bitmap(Screen.PrimaryScreen.Bounds.Width / 2, (Screen.PrimaryScreen.Bounds.Height / 2)-100);
             var graphics = Graphics.FromImage(bmpScreen);
-            graphics.CopyFromScreen(Screen.PrimaryScreen.Bounds.Width / 4, Screen.PrimaryScreen.Bounds.Height / 4, 0, 0, bmpScreen.Size);
+            graphics.CopyFromScreen(Screen.PrimaryScreen.Bounds.Width / 4, Screen.PrimaryScreen.Bounds.Height / 5, 0, 0, bmpScreen.Size);
             graphics.Dispose();
             return bmpScreen;
         }
