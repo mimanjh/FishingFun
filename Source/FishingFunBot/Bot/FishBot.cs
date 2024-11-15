@@ -14,25 +14,32 @@ namespace FishingFun
         public static ILog logger = LogManager.GetLogger("Fishbot");
 
         private ConsoleKey castKey;
-        private List<ConsoleKey> tenMinKey;
+        private Dictionary<String, ConsoleKey> keys;
         private IBobberFinder bobberFinder;
         private IBiteWatcher biteWatcher;
         private bool isEnabled;
         private Stopwatch stopwatch = new Stopwatch();
         private static Random random = new Random();
 
+        private DateTime lastSixtyMinPress = DateTime.MinValue;
+        private DateTime lastFifteenMinPress = DateTime.MinValue;
+        private DateTime lastThirtySecPress = DateTime.MinValue;
+
         public event EventHandler<FishingEvent> FishingEventHandler;
 
-        public FishingBot(IBobberFinder bobberFinder, IBiteWatcher biteWatcher, ConsoleKey castKey, List<ConsoleKey> tenMinKey)
+        public FishingBot(IBobberFinder bobberFinder, IBiteWatcher biteWatcher, ConsoleKey castKey, Dictionary<String, ConsoleKey> keys)
         {
             this.bobberFinder = bobberFinder;
             this.biteWatcher = biteWatcher;
             this.castKey = castKey;
-            this.tenMinKey = tenMinKey;
+            this.keys = keys;
 
             logger.Info("FishBot Created.");
             logger.Info("castKey: " + castKey);
-            logger.Info("tenMinKey: " +  tenMinKey);
+            foreach (var key in keys.Keys)
+            {
+                logger.Info("macro key: " + key);
+            }
 
             FishingEventHandler += (s, e) => { };
         }
@@ -43,7 +50,31 @@ namespace FishingFun
 
             isEnabled = true;
 
-            AdditionalKeyPress();
+            if (keys.TryGetValue("60Min", out ConsoleKey sixtyMinKey))
+            {
+                logger.Info("Pressing 60Min key.");
+                AdditionalKeyPress(sixtyMinKey);
+                Sleep(random.Next(11000, 13000)); // 11-13 seconds
+                lastSixtyMinPress = DateTime.Now;
+            }
+
+            // Handle 15Min key
+            if (keys.TryGetValue("15Min", out ConsoleKey fifteenMinKey))
+            {
+                logger.Info("Pressing 15Min key.");
+                AdditionalKeyPress(fifteenMinKey);
+                Sleep(random.Next(1000, 1500)); // 1-1.5 seconds
+                lastFifteenMinPress = DateTime.Now;
+            }
+
+            // Handle 30Sec key as usual
+            if (keys.TryGetValue("30Sec", out ConsoleKey thirtySecKey))
+            {
+                logger.Info("Pressing 30Sec key.");
+                AdditionalKeyPress(thirtySecKey);
+                Sleep(random.Next(1000, 1150));
+                lastThirtySecPress = DateTime.Now;
+            }
 
             while (isEnabled)
             {
@@ -51,7 +82,8 @@ namespace FishingFun
                 {
                     logger.Info($"Pressing key {castKey} to Cast.");
 
-                    PressAdditionalKeyIfDue(30);
+                    // Press additional keys if due
+                    PressAdditionalKeysIfDue();
 
                     FishingEventHandler?.Invoke(this, new FishingEvent { Action = FishingAction.Cast });
                     WowProcess.PressKey(castKey);
@@ -96,73 +128,106 @@ namespace FishingFun
         private void WaitForBite()
         {
             bobberFinder.Reset();
-
             var bobberPosition = FindBobber();
+
             if (bobberPosition == Point.Empty)
             {
+                logger.Info("Failed to find bobber.");
                 return;
             }
 
-            this.biteWatcher.Reset(bobberPosition);
-
+            biteWatcher.Reset(bobberPosition);
             logger.Info("Bobber start position: " + bobberPosition);
 
-            var timedTask = new TimedAction((a) => { logger.Info("Fishing timed out!"); }, 25 * 1000, 25);
+            var timedTask = new TimedAction(
+                (a) => logger.Info("Fishing timed out!"),
+                25 * 1000, // 25 seconds timeout
+                25
+            );
 
-            // Wait for the bobber to move
             while (isEnabled)
             {
                 var currentBobberPosition = FindBobber();
-                if (currentBobberPosition == Point.Empty || currentBobberPosition.X == 0) { return; }
 
-                if (this.biteWatcher.IsBite(currentBobberPosition))
+                if (currentBobberPosition == Point.Empty || currentBobberPosition.X == 0)
                 {
-                    Loot(bobberPosition);
-                    PressAdditionalKeyIfDue(30);
+                    logger.Info("Bobber lost, exiting wait.");
                     return;
                 }
 
-                if (!timedTask.ExecuteIfDue()) { return; }
+                if (biteWatcher.IsBite(currentBobberPosition))
+                {
+                    Loot(bobberPosition);
+
+                    return;
+                }
+
+                if (!timedTask.ExecuteIfDue())
+                {
+                    logger.Info("Timed task completed, exiting.");
+                    return;
+                }
             }
         }
 
-        private DateTime StartTime = DateTime.Now;
-
-        private void PressAdditionalKeyIfDue(int dueSeconds)
+        private void PressAdditionalKeysIfDue()
         {
-            var randDueSeconds = new Random();
-
-            if ((DateTime.Now - StartTime).TotalSeconds > randDueSeconds.Next(dueSeconds - 5, dueSeconds + 5) && tenMinKey.Count > 0)
+            // Handle 60Min key
+            if (keys.TryGetValue("60Min", out ConsoleKey sixtyMinKey) &&
+                (DateTime.Now - lastSixtyMinPress).TotalMinutes > random.Next(55, 59))
             {
-                AdditionalKeyPress();
+                logger.Info("Pressing 60Min key.");
+                AdditionalKeyPress(sixtyMinKey);
+                Sleep(random.Next(11000, 13000)); // 11-13 seconds
+                lastSixtyMinPress = DateTime.Now;
+            }
+
+            // Handle 15Min key
+            if (keys.TryGetValue("15Min", out ConsoleKey fifteenMinKey) &&
+                (DateTime.Now - lastFifteenMinPress).TotalMinutes > random.Next(13, 16))
+            {
+                logger.Info("Pressing 15Min key.");
+                AdditionalKeyPress(fifteenMinKey);
+                Sleep(random.Next(1000, 1500)); // 1-1.5 seconds
+                lastFifteenMinPress = DateTime.Now;
+            }
+
+            // Handle 30Sec key as usual
+            if (keys.TryGetValue("30Sec", out ConsoleKey thirtySecKey) &&
+                (DateTime.Now - lastThirtySecPress).TotalSeconds > random.Next(25, 29))
+            {
+                logger.Info("Pressing 30Sec key.");
+                AdditionalKeyPress(thirtySecKey);
+                Sleep(random.Next(1000, 1150));
+                lastThirtySecPress = DateTime.Now;
             }
         }
 
-        /// <summary>
-        /// Ten minute key can do anything you want e.g.
-        /// Macro to apply a lure: 
-        /// /use Bright Baubles
-        /// /use 16
-        /// 
-        /// Or a macro to delete junk:
-        /// /run for b=0,4 do for s=1,GetContainerNumSlots(b) do local n=GetContainerItemLink(b,s) if n and (strfind(n,"Raw R") or strfind(n,"Raw Spot") or strfind(n,"Raw Glo") or strfind(n,"roup")) then PickupContainerItem(b,s) DeleteCursorItem() end end end
-        /// </summary>
-        private void AdditionalKeyPress()
+        private void PressAdditionalKeyIfDue(int dueSeconds, ConsoleKey key)
         {
-            StartTime = DateTime.Now;
+            // Generate randomized interval
+            int randomOffset = new Random().Next(-5, 5);
+            double threshold = dueSeconds + randomOffset;
 
-            if (tenMinKey.Count == 0)
+            if ((DateTime.Now - lastThirtySecPress).TotalSeconds > threshold)
             {
-                logger.Info($"Ten Minute Key:  No keys defined in tenMinKey, so nothing to do (Define in call to FishingBot constructor).");
+                logger.Info($"Pressing additional key: {key} after {threshold} seconds.");
+                AdditionalKeyPress(key);
+
+                // Reset lastThirtySecPress after the key press
+                lastThirtySecPress = DateTime.Now;
             }
+        }
+
+        private void AdditionalKeyPress(ConsoleKey key)
+        {
+            lastThirtySecPress = DateTime.Now;
 
             FishingEventHandler?.Invoke(this, new FishingEvent { Action = FishingAction.Cast });
 
-            foreach (var key in tenMinKey)
-            {
-                logger.Info($"Ten Minute Key: Pressing key {key} to run a macro, delete junk fish or apply a lure etc.");
-                WowProcess.PressKey(key);
-            }
+            logger.Info($"Pressing key {key} to run a macro.");
+            WowProcess.PressKey(key);
+            Sleep(1000);
         }
 
         private void Loot(Point bobberPosition)
@@ -176,7 +241,7 @@ namespace FishingFun
 
         public static void Sleep(int ms)
         {
-            ms+=random.Next(0, 225);
+            ms += random.Next(0, 225);
 
             Stopwatch sw = new Stopwatch();
             sw.Start();

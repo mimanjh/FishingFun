@@ -165,7 +165,11 @@ namespace FishingFun
 
         public void BotThread()
         {
-            bot = new FishingBot(bobberFinder, this.biteWatcher, KeyChooser.CastKey, new List<ConsoleKey> { ConsoleKey.D9 });
+            Dictionary<String, ConsoleKey> keys = new Dictionary<String, ConsoleKey>();
+            keys.Add("60Min", ConsoleKey.F6);
+            keys.Add("15Min", ConsoleKey.D7);
+            keys.Add("30Sec", ConsoleKey.D9);
+            bot = new FishingBot(bobberFinder, this.biteWatcher, KeyChooser.CastKey, keys);
             bot.FishingEventHandler += FishingEventHandler;
             bot.Start();
 
