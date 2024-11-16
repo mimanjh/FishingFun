@@ -24,6 +24,7 @@ namespace FishingFun
         private DateTime lastSixtyMinPress = DateTime.MinValue;
         private DateTime lastFifteenMinPress = DateTime.MinValue;
         private DateTime lastThirtySecPress = DateTime.MinValue;
+        private DateTime lastRestTime = DateTime.Now;
 
         public event EventHandler<FishingEvent> FishingEventHandler;
 
@@ -36,9 +37,9 @@ namespace FishingFun
 
             logger.Info("FishBot Created.");
             logger.Info("castKey: " + castKey);
-            foreach (var key in keys.Keys)
+            foreach (var key in keys)
             {
-                logger.Info("macro key: " + key);
+                logger.Info("macro key " + key.Key + ": " + key.Value);
             }
 
             FishingEventHandler += (s, e) => { };
@@ -54,6 +55,9 @@ namespace FishingFun
             {
                 try
                 {
+                    // Rest every 30-90 minutes for 2-5 minutes
+                    restAtRandomTimes();
+
                     // Press additional keys if due
                     PressAdditionalKeysIfDue();
 
@@ -141,6 +145,25 @@ namespace FishingFun
                     logger.Info("Timed task completed, exiting.");
                     return;
                 }
+            }
+        }
+
+        private void restAtRandomTimes()
+        {
+            // Generate random intervals for when to rest (30 to 90 minutes)
+            int minRestInterval = 30 * 60 * 1000; 
+            int maxRestInterval = 90 * 60 * 1000; 
+            int restDurationMin = 2 * 60 * 1000; 
+            int restDurationMax = 5 * 60 * 1000;  
+
+            // Check if the time since the last rest exceeds the random interval
+            if ((DateTime.Now - lastRestTime).TotalMilliseconds > random.Next(minRestInterval, maxRestInterval))
+            {
+                int restDuration = random.Next(restDurationMin, restDurationMax);
+                logger.Info($"Resting for {restDuration / 1000} seconds.");
+                Sleep(restDuration);
+
+                lastRestTime = DateTime.Now; // Update the last rest time
             }
         }
 
