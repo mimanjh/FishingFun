@@ -28,11 +28,12 @@ namespace Powershell
             var biteWatcher = new PositionBiteWatcher(strikeValue);
 
             Dictionary<String, ConsoleKey> keys = new Dictionary<String, ConsoleKey>();
-            keys.Add("60Min", ConsoleKey.F6);
+            keys.Add("60MinShort", ConsoleKey.F6);
+            keys.Add("60MinLong", ConsoleKey.F7);
             keys.Add("15Min", ConsoleKey.D7);
-            keys.Add("30Sec", ConsoleKey.D9);
+            keys.Add("30Sec", ConsoleKey.D8);
 
-            var bot = new FishingBot(bobberFinder, biteWatcher, ConsoleKey.D8, keys);
+            var bot = new FishingBot(bobberFinder, biteWatcher, ConsoleKey.D9, keys);
             bot.FishingEventHandler += (b, e) => LogManager.GetLogger("Fishbot").Info(e);
 
             //WowProcess.PressKey(ConsoleKey.Spacebar);

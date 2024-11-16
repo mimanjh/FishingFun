@@ -50,40 +50,14 @@ namespace FishingFun
 
             isEnabled = true;
 
-            if (keys.TryGetValue("60Min", out ConsoleKey sixtyMinKey))
-            {
-                logger.Info("Pressing 60Min key.");
-                AdditionalKeyPress(sixtyMinKey);
-                Sleep(random.Next(11000, 13000)); // 11-13 seconds
-                lastSixtyMinPress = DateTime.Now;
-            }
-
-            // Handle 15Min key
-            if (keys.TryGetValue("15Min", out ConsoleKey fifteenMinKey))
-            {
-                logger.Info("Pressing 15Min key.");
-                AdditionalKeyPress(fifteenMinKey);
-                Sleep(random.Next(1000, 1500)); // 1-1.5 seconds
-                lastFifteenMinPress = DateTime.Now;
-            }
-
-            // Handle 30Sec key as usual
-            if (keys.TryGetValue("30Sec", out ConsoleKey thirtySecKey))
-            {
-                logger.Info("Pressing 30Sec key.");
-                AdditionalKeyPress(thirtySecKey);
-                Sleep(random.Next(1000, 1150));
-                lastThirtySecPress = DateTime.Now;
-            }
-
             while (isEnabled)
             {
                 try
                 {
-                    logger.Info($"Pressing key {castKey} to Cast.");
-
                     // Press additional keys if due
                     PressAdditionalKeysIfDue();
+
+                    logger.Info($"Pressing key {castKey} to fish.");
 
                     FishingEventHandler?.Invoke(this, new FishingEvent { Action = FishingAction.Cast });
                     WowProcess.PressKey(castKey);
@@ -172,14 +146,24 @@ namespace FishingFun
 
         private void PressAdditionalKeysIfDue()
         {
-            // Handle 60Min key
-            if (keys.TryGetValue("60Min", out ConsoleKey sixtyMinKey) &&
+            // Handle 60MinShort key
+            if (keys.TryGetValue("60MinShort", out ConsoleKey sixtyMinKeyShort) &&
                 (DateTime.Now - lastSixtyMinPress).TotalMinutes > random.Next(55, 59))
             {
-                logger.Info("Pressing 60Min key.");
-                AdditionalKeyPress(sixtyMinKey);
-                Sleep(random.Next(11000, 13000)); // 11-13 seconds
+                logger.Info("Pressing 60MinShort key twice.");
+                for (int i = 0; i < 2; i++)
+                {
+                    AdditionalKeyPress(sixtyMinKeyShort);
+                    Sleep(random.Next(200, 250)); // total of 1-1.25 seconds
+                }
+
+                Sleep(random.Next(1000, 1100));
+
+                keys.TryGetValue("60MinLong", out ConsoleKey sixtyMinLongKey);
+                logger.Info("Pressing 60MinLong key.");
+                AdditionalKeyPress(sixtyMinLongKey);
                 lastSixtyMinPress = DateTime.Now;
+                Sleep(random.Next(11000, 13000)); // 11-13 seconds
             }
 
             // Handle 15Min key
@@ -188,9 +172,10 @@ namespace FishingFun
             {
                 logger.Info("Pressing 15Min key.");
                 AdditionalKeyPress(fifteenMinKey);
-                Sleep(random.Next(1000, 1500)); // 1-1.5 seconds
                 lastFifteenMinPress = DateTime.Now;
+                Sleep(random.Next(1000, 1500)); // 1-1.5 seconds
             }
+
 
             // Handle 30Sec key as usual
             if (keys.TryGetValue("30Sec", out ConsoleKey thirtySecKey) &&
@@ -198,45 +183,25 @@ namespace FishingFun
             {
                 logger.Info("Pressing 30Sec key.");
                 AdditionalKeyPress(thirtySecKey);
+                lastThirtySecPress = DateTime.Now;
                 Sleep(random.Next(1000, 1150));
-                lastThirtySecPress = DateTime.Now;
             }
-        }
 
-        private void PressAdditionalKeyIfDue(int dueSeconds, ConsoleKey key)
-        {
-            // Generate randomized interval
-            int randomOffset = new Random().Next(-5, 5);
-            double threshold = dueSeconds + randomOffset;
-
-            if ((DateTime.Now - lastThirtySecPress).TotalSeconds > threshold)
-            {
-                logger.Info($"Pressing additional key: {key} after {threshold} seconds.");
-                AdditionalKeyPress(key);
-
-                // Reset lastThirtySecPress after the key press
-                lastThirtySecPress = DateTime.Now;
-            }
         }
 
         private void AdditionalKeyPress(ConsoleKey key)
         {
-            lastThirtySecPress = DateTime.Now;
-
             FishingEventHandler?.Invoke(this, new FishingEvent { Action = FishingAction.Cast });
 
-            logger.Info($"Pressing key {key} to run a macro.");
             WowProcess.PressKey(key);
-            Sleep(1000);
         }
 
         private void Loot(Point bobberPosition)
         {
             logger.Info($"Pressing Key: D0 to loot.");
-            var randomNumber = random.Next(1500, 2000);
-            Sleep(1500);
+            Sleep(random.Next(1400, 1500));
             WowProcess.PressKey(ConsoleKey.D0);
-            Sleep(1000);
+            Sleep(random.Next(1000, 1150));
         }
 
         public static void Sleep(int ms)
